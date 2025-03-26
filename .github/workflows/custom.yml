@@ -11,44 +11,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+build-and-push:
+  runs-on: ubuntu-latest
+  env:
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/products-app:latest
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Login to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Build Docker image
-        run: docker build -t ghcr.io/${{ github.repository }}/products-app:latest ./projects/products
+    - name: Build Docker image
+      run: docker build -t $IMAGE_NAME ./projects/products
 
-      - name: Push image to GHCR
-        run: docker push ghcr.io/${{ github.repository }}/products-app:latest
-  test:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    steps:
-      - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Push image to GHCR
+      run: docker push $IMAGE_NAME
+test:
+  runs-on: ubuntu-latest
+  needs: build-and-push
+  env:
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/products-app:latest
+  steps:
+    - name: Login to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository }}/products-app:latest
+    - name: Pull image
+      run: docker pull $IMAGE_NAME
 
-      - name: Run tests inside container
-        run: docker run --rm ghcr.io/${{ github.repository }}/products-app:latest poetry run pytest
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+    - name: Run tests inside container
+      run: docker run --rm $IMAGE_NAME poetry run pytest
+deploy:
+  runs-on: ubuntu-latest
+  needs: test
+  env:
+    IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/products-app:latest
+  steps:
+    - name: Login to GitHub Container Registry
+      run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository }}/products-app:latest
+    - name: Pull image
+      run: docker pull $IMAGE_NAME
 
-      - name: Simulate deploy
-        run: |
-          echo "🔧 Simulando deploy fictício..."
-          docker run -d -p 8000:8000 ghcr.io/${{ github.repository }}/products-app:latest
-          echo "✅ Aplicação simulada em execução"
+    - name: Simulate deploy
+      run: |
+        echo "🔧 Simulando deploy fictício..."
+        docker run -d -p 8000:8000 $IMAGE_NAME
+        echo "✅ Aplicação simulada em execução"
