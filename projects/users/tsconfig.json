@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+      "target": "ES6",
+      "module": "CommonJS",
+      "esModuleInterop": true,
+      "forceConsistentCasingInFileNames": true,
+      "strict": false,
+      "skipLibCheck": true,
+      "rootDir": ".",
+      "outDir": "./dist",
+      "noCheck": true,
+      "allowImportingTsExtensions": false
+    },
+    "exclude": ["node_modules", "prisma/*.ts"],
+  }
+  

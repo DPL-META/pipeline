@@ -1,0 +1,15 @@
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Pull image
+        run: docker pull ghcr.io/${{ github.repository }}/products-app:latest
+
+      - name: Simulate deploy
+        run: |
+          echo "🔧 Simulando deploy fictício..."
+          docker run -d -p 8000:8000 ghcr.io/${{ github.repository }}/products-app:latest
+          echo "✅ Aplicação simulada em execução"

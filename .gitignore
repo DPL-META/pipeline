@@ -1,0 +1,18 @@
+# IDE
+.idea
+.vscode
+
+# python
+__pycache__
+venv
+dist
+.env
+
+# nodejs
+node_modules
+
+# database
+*.sqlite
+
+# env
+.env
