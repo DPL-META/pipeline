@@ -2,11 +2,16 @@ name: Custom Pipeline
 
 on:
   push:
+    branches-ignore:
+      - main
+      - develop
+      - release/**
+
+  pull_request:
     branches:
       - main
       - develop
-
-  pull_request:
+      - release/**
 
   workflow_dispatch:
 
@@ -14,3 +19,4 @@ env:
   IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/products-app:${{ github.sha }}
 
 jobs:
+
