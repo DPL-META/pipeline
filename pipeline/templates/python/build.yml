@@ -5,10 +5,14 @@
         uses: actions/checkout@v3
 
       - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
         run: docker build -t $IMAGE_NAME ./projects/products
 
-      - name: Push image to GHCR
+      - name: Push image to GitHub Container Registry
         run: docker push $IMAGE_NAME

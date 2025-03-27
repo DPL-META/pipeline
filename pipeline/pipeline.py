@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument(
         "--steps",
         required=True,
-        help="Steps desejados separados por vírgula. Ex: build,test,deploy"
+        help="Steps desejados separados por vírgula. Ex: test,deploy"
     )
     return parser.parse_args()
 
@@ -34,7 +34,15 @@ def load_template(path: Path) -> str:
 
 def generate_pipeline(lang: str, steps: list[str]):
     print(f"📦 Gerando pipeline para linguagem: {lang}")
-    print(f"⚙️  Steps selecionados: {steps}")
+
+    if "build" not in steps:
+        print("🔒 Step obrigatório 'build' não foi incluído. Adicionando automaticamente.")
+        steps.insert(0, "build")
+    else:
+        # Garante que 'build' esteja sempre no início
+        steps = ["build"] + [s for s in steps if s != "build"]
+
+    print(f"⚙️  Steps finais aplicados: {steps}")
 
     # Garante que o diretório .github/workflows existe
     GITHUB_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
@@ -62,4 +70,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-#

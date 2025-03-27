@@ -1,9 +1,13 @@
   deploy:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [build-and-push, test]
     steps:
       - name: Login to GitHub Container Registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull image
         run: docker pull $IMAGE_NAME
