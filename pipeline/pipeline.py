@@ -3,11 +3,11 @@
 import argparse
 from pathlib import Path
 
-# Diretórios base
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 GITHUB_WORKFLOWS_DIR = BASE_DIR.parent / ".github" / "workflows"
 CUSTOM_PIPELINE_FILE = GITHUB_WORKFLOWS_DIR / "custom.yml"
+DEFAULT_PIPELINE_FILE = GITHUB_WORKFLOWS_DIR / "default.yml"
 
 AVAILABLE_STEPS = {
     "python": ["build", "test", "deploy"],
@@ -71,19 +71,69 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
 
     GITHUB_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # custom.yml
     content = load_template(TEMPLATES_DIR / "base.yml")
     content = insert_env_variables(content, project)
+    if not content.endswith("\n"):
+        content += "\n"
 
     for step in steps:
         step_path = TEMPLATES_DIR / lang / f"{step}.yml"
         step_content = load_template(step_path)
         if step_content:
-            content += step_content
+            content += "\n" + step_content
         else:
             print(f"⚠️  Step '{step}' não encontrado para '{lang}'. Ignorado.")
 
     CUSTOM_PIPELINE_FILE.write_text(content)
-    print(f"✅ Pipeline gerado em: {CUSTOM_PIPELINE_FILE}")
+    print(f"✅ custom.yml gerado em: {CUSTOM_PIPELINE_FILE}")
+
+    # default.yml (com todos os steps)
+    full_content = load_template(TEMPLATES_DIR / "base.yml")
+    full_content = insert_env_variables(full_content, project)
+
+    full_lines = full_content.splitlines()
+    full_lines = [line for line in full_lines if "branches-ignore" not in line]
+
+    # remove qualquer bloco `on: push`, `workflow_dispatch`, `pull_request` duplicado
+    clean_lines = []
+    in_on_block = False
+    for line in full_lines:
+        if line.strip() == "on:":
+            clean_lines.append(line)
+            in_on_block = True
+            continue
+        if in_on_block:
+            if line.startswith("  "):
+                continue
+            else:
+                in_on_block = False
+        clean_lines.append(line)
+
+    # adiciona novo bloco correto
+    for i, line in enumerate(clean_lines):
+        if line.strip() == "on:":
+            clean_lines.insert(i + 1, "  pull_request:")
+            clean_lines.insert(i + 2, "    branches:")
+            clean_lines.insert(i + 3, "      - main")
+            clean_lines.insert(i + 4, "      - develop")
+            clean_lines.insert(i + 5, "      - release/**")
+            break
+
+    full_content = "\n".join(clean_lines)
+    if not full_content.endswith("\n"):
+        full_content += "\n"
+
+    for step in AVAILABLE_STEPS[lang]:
+        step_path = TEMPLATES_DIR / lang / f"{step}.yml"
+        step_content = load_template(step_path)
+        if step_content:
+            full_content += "\n" + step_content
+        else:
+            print(f"⚠️  Step '{step}' não encontrado para '{lang}'. Ignorado.")
+
+    DEFAULT_PIPELINE_FILE.write_text(full_content)
+    print(f"✅ default.yml gerado em: {DEFAULT_PIPELINE_FILE}")
 
 def main():
     args = parse_args()
