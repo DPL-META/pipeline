@@ -13,7 +13,11 @@
         run: docker pull $IMAGE_NAME
 
       - name: Run unit tests
-        run: docker run --rm --entrypoint "" $IMAGE_NAME sh -c "npm run migrate && npm run seed && npm test"
+        run: |
+          docker run --rm --entrypoint "" $IMAGE_NAME \
+            sh -c "npm run migrate && npm run seed && npm test"
 
       - name: Run e2e tests
-        run: docker run --rm --entrypoint "" $IMAGE_NAME sh -c "npm run migrate && npm run seed && npm run test:e2e"
+        run: |
+          docker run --rm --entrypoint "" $IMAGE_NAME \
+            sh -c "npm run migrate && npm run seed && npm run test:e2e"

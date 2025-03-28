@@ -1,3 +1,4 @@
+---
 name: Custom Pipeline
 
 on:
@@ -12,4 +13,3 @@ on:
 env:
 
 jobs:
-

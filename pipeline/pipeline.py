@@ -37,7 +37,7 @@ def load_template(path: Path) -> str:
     if not path.exists():
         print(f"⚠️  Arquivo não encontrado: {path}")
         return ""
-    return path.read_text()
+    return path.read_text(encoding="utf-8")
 
 def insert_env_variables(content: str, project: str) -> str:
     if "env:" in content:
@@ -45,24 +45,32 @@ def insert_env_variables(content: str, project: str) -> str:
         for i, line in enumerate(lines):
             if line.strip() == "env:":
                 lines.insert(i + 1, f"  PROJECT_NAME: {project}")
-                lines.insert(i + 2, f"  IMAGE_NAME: ghcr.io/${{{{ github.repository_owner }}}}/{project}-app:${{{{ github.sha }}}}")
+                lines.insert(i + 2, "  IMAGE_NAME: >")
+                lines.insert(i + 3, f"    ghcr.io/${{{{ github.repository_owner }}}}/")
+                lines.insert(i + 4, f"    {project}-app:${{{{ github.sha }}}}")
                 break
         return "\n".join(lines)
     else:
-        return f"env:\n  PROJECT_NAME: {project}\n  IMAGE_NAME: ghcr.io/${{{{ github.repository_owner }}}}/{project}-app:${{{{ github.sha }}}}\n" + content
+        return (
+            f"env:\n"
+            f"  PROJECT_NAME: {project}\n"
+            f"  IMAGE_NAME: >\n"
+            f"    ghcr.io/${{{{ github.repository_owner }}}}/\n"
+            f"    {project}-app:${{{{ github.sha }}}}\n" + content
+        )
 
 def validate_yaml(path: Path):
-    print(f"🧪 Validando {path.name}...")
+    print(f"🧪 Validando {path.name} com yamllint...")
     try:
         subprocess.run(
-            ["python", "-c", f"import yaml; yaml.safe_load(open('{path.as_posix()}'))"],
+            ["yamllint", str(path)],
             check=True,
             capture_output=True
         )
-        print(f"✅ {path.name} é um YAML válido.\n")
+        print(f"✅ {path.name} passou na validação do yamllint.\n")
     except subprocess.CalledProcessError as e:
-        print(f"❌ {path.name} inválido. Erro de sintaxe YAML:")
-        print(e.stderr.decode())
+        print(f"❌ {path.name} falhou na validação do yamllint:")
+        print(e.stdout.decode())
 
 def generate_pipeline(lang: str, project: str, steps: list[str]):
     print(f"📦 Gerando pipeline para linguagem: {lang}, projeto: {project}")
@@ -82,7 +90,6 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
         steps = ["build"] + [s for s in steps if s != "build"]
 
     print(f"⚙️ Steps finais aplicados: {steps}")
-
     GITHUB_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
 
     # custom.yml
@@ -99,7 +106,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
         else:
             print(f"⚠️  Step '{step}' não encontrado para '{lang}'. Ignorado.")
 
-    CUSTOM_PIPELINE_FILE.write_text(content)
+    CUSTOM_PIPELINE_FILE.write_text(content.replace("\r\n", "\n"), encoding="utf-8", newline="\n")
     print(f"✅ custom.yml gerado em: {CUSTOM_PIPELINE_FILE}")
     validate_yaml(CUSTOM_PIPELINE_FILE)
 
@@ -110,7 +117,6 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
     full_lines = full_content.splitlines()
     full_lines = [line for line in full_lines if "branches-ignore" not in line]
 
-    # remove qualquer bloco `on:` duplicado
     clean_lines = []
     in_on_block = False
     for line in full_lines:
@@ -125,7 +131,6 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
                 in_on_block = False
         clean_lines.append(line)
 
-    # adiciona novo bloco correto
     for i, line in enumerate(clean_lines):
         if line.strip() == "on:":
             clean_lines.insert(i + 1, "  pull_request:")
@@ -147,7 +152,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
         else:
             print(f"⚠️  Step '{step}' não encontrado para '{lang}'. Ignorado.")
 
-    DEFAULT_PIPELINE_FILE.write_text(full_content)
+    DEFAULT_PIPELINE_FILE.write_text(full_content.replace("\r\n", "\n"), encoding="utf-8", newline="\n")
     print(f"✅ default.yml gerado em: {DEFAULT_PIPELINE_FILE}")
     validate_yaml(DEFAULT_PIPELINE_FILE)
 
