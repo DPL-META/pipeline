@@ -1,5 +1,5 @@
 ---
-name: Custom Pipeline
+name: CI Pipeline
 
 on:
   pull_request:
