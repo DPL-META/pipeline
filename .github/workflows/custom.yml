@@ -13,8 +13,7 @@ on:
 env:
   PROJECT_NAME: users
   IMAGE_NAME: >
-    ghcr.io/${{ github.repository_owner }}/
-    users-app:${{ github.sha }}
+    ghcr.io/${{ github.repository_owner }}/users-app:${{ github.sha }}
 
 jobs:
 
