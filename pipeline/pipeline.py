@@ -44,11 +44,11 @@ def insert_env_variables(content: str, project: str) -> str:
         for i, line in enumerate(lines):
             if line.strip() == "env:":
                 lines.insert(i + 1, f"  PROJECT_NAME: {project}")
-                lines.insert(i + 2, f"  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/{project}-app:${{ github.sha }}")
+                lines.insert(i + 2, f"  IMAGE_NAME: ghcr.io/${{{{ github.repository_owner }}}}/{project}-app:${{{{ github.sha }}}}")
                 break
         return "\n".join(lines)
     else:
-        return f"env:\n  PROJECT_NAME: {project}\n  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/{project}-app:${{ github.sha }}\n" + content
+        return f"env:\n  PROJECT_NAME: {project}\n  IMAGE_NAME: ghcr.io/${{{{ github.repository_owner }}}}/{project}-app:${{{{ github.sha }}}}\n" + content
 
 def generate_pipeline(lang: str, project: str, steps: list[str]):
     print(f"📦 Gerando pipeline para linguagem: {lang}, projeto: {project}")
