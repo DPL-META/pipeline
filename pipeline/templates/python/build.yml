@@ -12,7 +12,7 @@
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker build -t $IMAGE_NAME ./projects/products
+        run: docker build -t $IMAGE_NAME ./projects/{{PROJECT_NAME}}
 
       - name: Push image to GitHub Container Registry
         run: docker push $IMAGE_NAME

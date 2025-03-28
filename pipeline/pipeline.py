@@ -2,12 +2,13 @@
 
 import argparse
 from pathlib import Path
-from typing import List
 
+# Diretórios base
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 GITHUB_WORKFLOWS_DIR = BASE_DIR.parent / ".github" / "workflows"
-PIPELINE_FILE = GITHUB_WORKFLOWS_DIR / "custom.yml"
+CUSTOM_PIPELINE_FILE = GITHUB_WORKFLOWS_DIR / "custom.yml"
+
 AVAILABLE_STEPS = {
     "python": ["build", "test", "deploy"],
     "node": ["build", "test", "deploy"]
@@ -21,22 +22,14 @@ def parse_args():
   node:   build, test, deploy
 
 Exemplos de uso:
-  python pipeline.py --lang python --steps test,deploy
-  python pipeline.py --lang python
+  python pipeline.py --lang python --project products --steps test,deploy
+  python pipeline.py --lang node --project users
 """,
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument(
-        "--lang",
-        required=True,
-        choices=["python", "node"],
-        help="Linguagem do projeto"
-    )
-    parser.add_argument(
-        "--steps",
-        required=False,
-        help="Steps desejados separados por vírgula"
-    )
+    parser.add_argument("--lang", required=True, choices=["python", "node"], help="Linguagem do projeto")
+    parser.add_argument("--project", required=True, help="Nome do diretório do projeto em 'projects/'")
+    parser.add_argument("--steps", required=False, help="Steps desejados separados por vírgula")
     return parser.parse_args()
 
 def load_template(path: Path) -> str:
@@ -45,8 +38,23 @@ def load_template(path: Path) -> str:
         return ""
     return path.read_text()
 
-def generate_pipeline(lang: str, steps: List[str]):
-    print(f"📦 Gerando pipeline para linguagem: {lang}")
+def insert_project_name_env_block(content: str, project: str) -> str:
+    if "env:" in content:
+        lines = content.splitlines()
+        for i, line in enumerate(lines):
+            if line.strip() == "env:":
+                lines.insert(i + 1, f"  PROJECT_NAME: {project}")
+                break
+        return "\n".join(lines)
+    else:
+        return f"env:\n  PROJECT_NAME: {project}\n" + content
+
+def generate_pipeline(lang: str, project: str, steps: list[str]):
+    print(f"📦 Gerando pipeline para linguagem: {lang}, projeto: {project}")
+
+    project_path = BASE_DIR.parent / "projects" / project
+    if not project_path.exists():
+        raise FileNotFoundError(f"❌ Projeto '{project}' não encontrado em 'projects/'")
 
     if not steps:
         print("ℹ️ Nenhum step informado. Usando configuração padrão: build,test")
@@ -63,6 +71,8 @@ def generate_pipeline(lang: str, steps: List[str]):
     GITHUB_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
 
     content = load_template(TEMPLATES_DIR / "base.yml")
+    content = insert_project_name_env_block(content, project)
+
     for step in steps:
         step_path = TEMPLATES_DIR / lang / f"{step}.yml"
         step_content = load_template(step_path)
@@ -71,13 +81,13 @@ def generate_pipeline(lang: str, steps: List[str]):
         else:
             print(f"⚠️  Step '{step}' não encontrado para '{lang}'. Ignorado.")
 
-    PIPELINE_FILE.write_text(content)
-    print(f"✅ Pipeline gerado em: {PIPELINE_FILE}")
+    CUSTOM_PIPELINE_FILE.write_text(content)
+    print(f"✅ Pipeline gerado em: {CUSTOM_PIPELINE_FILE}")
 
 def main():
     args = parse_args()
-    steps = [step.strip() for step in args.steps.split(",")] if args.steps else []
-    generate_pipeline(args.lang, steps)
+    steps = [s.strip() for s in args.steps.split(",")] if args.steps else []
+    generate_pipeline(args.lang, args.project, steps)
 
 if __name__ == "__main__":
     main()
