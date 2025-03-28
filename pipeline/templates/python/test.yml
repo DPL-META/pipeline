@@ -10,7 +10,7 @@
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull image
-        run: docker pull $IMAGE_NAME
+        run: docker pull ${{ env.IMAGE_NAME }}
 
       - name: Run tests inside container
-        run: docker run --rm $IMAGE_NAME poetry run pytest
+        run: docker run --rm ${{ env.IMAGE_NAME }} poetry run pytest

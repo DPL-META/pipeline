@@ -10,10 +10,10 @@
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull image
-        run: docker pull $IMAGE_NAME
+        run: docker pull ${{ env.IMAGE_NAME }}
 
       - name: Simulate deploy
         run: |
           echo "🔧 Simulando deploy fictício..."
-          docker run -d -p 8000:8000 $IMAGE_NAME
+          docker run -d -p 8000:8000 ${{ env.IMAGE_NAME }}
           echo "✅ Aplicação simulada em execução"
