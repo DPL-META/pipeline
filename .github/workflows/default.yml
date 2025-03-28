@@ -11,9 +11,9 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_NAME: users
+  PROJECT_NAME: products
   IMAGE_NAME: >
-    ghcr.io/${{ github.repository_owner }}/users-app:${{ github.sha }}
+    ghcr.io/${{ github.repository_owner }}/products-app:${{ github.sha }}
 
 jobs:
 
