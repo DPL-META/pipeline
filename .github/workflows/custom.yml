@@ -50,15 +50,8 @@ jobs:
       - name: Pull image
         run: docker pull $IMAGE_NAME
 
-      - name: Run unit tests
-        run: |
-          docker run --rm --entrypoint "" $IMAGE_NAME \
-            sh -c "npm run migrate && npm run seed && npm test"
-
-      - name: Run e2e tests
-        run: |
-          docker run --rm --entrypoint "" $IMAGE_NAME \
-            sh -c "npm run migrate && npm run seed && npm run test:e2e"
+      - name: Run tests inside container
+        run: docker run --rm $IMAGE_NAME poetry run pytest
 
   deploy:
     runs-on: ubuntu-latest
@@ -76,6 +69,6 @@ jobs:
 
       - name: Simulate deploy
         run: |
-          echo "🚀 Simulando deploy em produção..."
-          docker run -d -p 3000:3000 $IMAGE_NAME
-          echo "✅ Aplicação em execução em http://localhost:3000"
+          echo "🔧 Simulando deploy fictício..."
+          docker run -d -p 8000:8000 $IMAGE_NAME
+          echo "✅ Aplicação simulada em execução"
