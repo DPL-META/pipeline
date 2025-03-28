@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import subprocess
 
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
@@ -50,6 +51,19 @@ def insert_env_variables(content: str, project: str) -> str:
     else:
         return f"env:\n  PROJECT_NAME: {project}\n  IMAGE_NAME: ghcr.io/${{{{ github.repository_owner }}}}/{project}-app:${{{{ github.sha }}}}\n" + content
 
+def validate_yaml(path: Path):
+    print(f"🧪 Validando {path.name}...")
+    try:
+        subprocess.run(
+            ["python", "-c", f"import yaml; yaml.safe_load(open('{path.as_posix()}'))"],
+            check=True,
+            capture_output=True
+        )
+        print(f"✅ {path.name} é um YAML válido.\n")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ {path.name} inválido. Erro de sintaxe YAML:")
+        print(e.stderr.decode())
+
 def generate_pipeline(lang: str, project: str, steps: list[str]):
     print(f"📦 Gerando pipeline para linguagem: {lang}, projeto: {project}")
 
@@ -87,6 +101,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
 
     CUSTOM_PIPELINE_FILE.write_text(content)
     print(f"✅ custom.yml gerado em: {CUSTOM_PIPELINE_FILE}")
+    validate_yaml(CUSTOM_PIPELINE_FILE)
 
     # default.yml (com todos os steps)
     full_content = load_template(TEMPLATES_DIR / "base.yml")
@@ -95,7 +110,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
     full_lines = full_content.splitlines()
     full_lines = [line for line in full_lines if "branches-ignore" not in line]
 
-    # remove qualquer bloco `on: push`, `workflow_dispatch`, `pull_request` duplicado
+    # remove qualquer bloco `on:` duplicado
     clean_lines = []
     in_on_block = False
     for line in full_lines:
@@ -134,6 +149,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
 
     DEFAULT_PIPELINE_FILE.write_text(full_content)
     print(f"✅ default.yml gerado em: {DEFAULT_PIPELINE_FILE}")
+    validate_yaml(DEFAULT_PIPELINE_FILE)
 
 def main():
     args = parse_args()
