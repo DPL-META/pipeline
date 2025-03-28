@@ -38,16 +38,17 @@ def load_template(path: Path) -> str:
         return ""
     return path.read_text()
 
-def insert_project_name_env_block(content: str, project: str) -> str:
+def insert_env_variables(content: str, project: str) -> str:
     if "env:" in content:
         lines = content.splitlines()
         for i, line in enumerate(lines):
             if line.strip() == "env:":
                 lines.insert(i + 1, f"  PROJECT_NAME: {project}")
+                lines.insert(i + 2, f"  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/{project}-app:${{ github.sha }}")
                 break
         return "\n".join(lines)
     else:
-        return f"env:\n  PROJECT_NAME: {project}\n" + content
+        return f"env:\n  PROJECT_NAME: {project}\n  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/{project}-app:${{ github.sha }}\n" + content
 
 def generate_pipeline(lang: str, project: str, steps: list[str]):
     print(f"📦 Gerando pipeline para linguagem: {lang}, projeto: {project}")
@@ -71,7 +72,7 @@ def generate_pipeline(lang: str, project: str, steps: list[str]):
     GITHUB_WORKFLOWS_DIR.mkdir(parents=True, exist_ok=True)
 
     content = load_template(TEMPLATES_DIR / "base.yml")
-    content = insert_project_name_env_block(content, project)
+    content = insert_env_variables(content, project)
 
     for step in steps:
         step_path = TEMPLATES_DIR / lang / f"{step}.yml"

@@ -11,7 +11,7 @@ on:
 
 env:
   PROJECT_NAME: products
-  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/$PROJECT_NAME-app:${{ github.sha }}
+  IMAGE_NAME: ghcr.io/${ github.repository_owner }/products-app:${ github.sha }
 
 jobs:
   build-and-push:
